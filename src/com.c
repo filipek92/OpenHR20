@@ -107,7 +107,7 @@ static volatile uint8_t COM_requests;
  ******************************************************************************/
 void COM_rx_char_isr(char c)
 {
-	if (c == 0x1b){
+	if (c == 0x1b){ //Bootloader request, reset and wait for command
 		cli();
 		wdt_enable(WDTO_15MS);  //wd on,15ms
 		while (1);
