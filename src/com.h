@@ -43,6 +43,8 @@ void COM_init(void);
 
 void COM_print_debug(uint8_t type);
 
+void COM_json(void);
+
 void COM_commad_parse(void);
 #if RFM == 1
 void COM_wireless_command_parse(uint8_t *rfm_framebuf, uint8_t rfm_framepos);

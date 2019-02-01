@@ -52,7 +52,7 @@
 #include "debug.h"
 
 
-#define TX_BUFF_SIZE 128
+#define TX_BUFF_SIZE 256
 #define RX_BUFF_SIZE 32
 
 #define ENABLE_LOCAL_COMMANDS 1
@@ -107,6 +107,12 @@ static volatile uint8_t COM_requests;
  ******************************************************************************/
 void COM_rx_char_isr(char c)
 {
+	if (c == 0x1b){
+		cli();
+		wdt_enable(WDTO_15MS);  //wd on,15ms
+		while (1);
+	}
+
 	if (c != '\0') {                        // ascii based protocol, \0 char is not alloweed, ignore it
 		if (c == '\r') c = '\n';        // mask diffrence between operating systems
 		rx_buff[rx_buff_in++] = c;
@@ -262,6 +268,25 @@ static void print_version(bool sync)
 }
 
 
+/*!
+ *******************************************************************************
+ *  \brief helper function print version string
+ *
+ *  \note
+ ******************************************************************************/
+static void print_dec(uint32_t n){
+	char str[11];
+	uint8_t p=0;
+
+	do {  /* generate digits in reverse order */
+		str[p++] = n % 10 + '0';  /* get next digit */
+	} while ((n /= 10) > 0);
+	p--;
+	do{
+		COM_putchar(str[p]);
+	}while(p--);
+}
+
 
 /*!
  *******************************************************************************
@@ -365,6 +390,46 @@ void COM_print_debug(uint8_t type)
 }
 
 /*!
+ *******************************************************************************
+ *  \brief Print json status line
+ *
+ *  \note
+ ******************************************************************************/
+void COM_json()
+{
+	print_s_p(PSTR("{\"date\":\""));
+	print_decXX(RTC_GetDay());
+	COM_putchar('.');
+	print_decXX(RTC_GetMonth());
+	COM_putchar('.');
+	print_decXX(RTC_GetYearYY());
+	print_s_p(PSTR("\", \"time\":\""));
+	print_decXX(RTC_GetHour());
+	COM_putchar(':');
+	print_decXX(RTC_GetMinute());
+	COM_putchar(':');
+	print_decXX(RTC_GetSecond());
+	print_s_p(PSTR("\", \"mode\":\""));
+	COM_putchar((CTL_mode_auto) ? (CTL_test_auto() ? 'A' : '-') : 'M');
+	print_s_p(PSTR("\", \"valve\":"));
+	print_dec(valve_wanted);
+	print_s_p(PSTR(", \"temp\":"));
+	print_dec(temp_average);
+	print_s_p(PSTR(", \"setpoint\":"));
+	print_dec(calc_temp(CTL_temp_wanted_last));
+	print_s_p(PSTR(", \"battery\":"));
+	print_dec(bat_average);
+	print_s_p(PSTR(", \"error\":"));
+	print_dec(CTL_error);
+	print_s_p(PSTR(", \"locked\":"));
+	print_s_p(menu_locked?PSTR("true"):PSTR("false"));
+	print_s_p(PSTR(", \"window\":"));
+	print_s_p(mode_window()?PSTR("true"):PSTR("false"));
+	print_s_p(PSTR("}\n"));
+	COM_flush();
+}
+
+/*!
  *  \note dirty trick with shared array for \ref COM_hex_parse and \ref COM_commad_parse
  *  code size optimalization
  */
@@ -452,6 +517,10 @@ void COM_commad_parse(void)
 #if ENABLE_LOCAL_COMMANDS
 		case 'D':
 			if (COM_getchar() == '\n') COM_print_debug(1);
+			c = '\0';
+			break;
+		case 'J':
+			if (COM_getchar() == '\n') COM_json();
 			c = '\0';
 			break;
 		case 'T':

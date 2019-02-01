@@ -78,7 +78,7 @@
 #if THERMOTRONIC != 1 //No serialport implementet yet
 // Note we should only enable of of the following at one time
 /* we support UART */
-//#define COM_UART 1
+#define COM_UART 1
 
 /* Our default Adress, if not set or invalid */
 /* #define COM_DEF_ADR 1 */
@@ -89,7 +89,7 @@
 // Some default Values
 #define BOOT_DD         1       //!< Boot-Up date: day
 #define BOOT_MM         1       //!< Boot-Up date: month
-#define BOOT_YY        17       //!< Boot-Up date: year
+#define BOOT_YY        19       //!< Boot-Up date: year
 #define BOOT_hh        12       //!< Boot-Up time: hour
 #define BOOT_mm        00       //!< Boot-Up time: minutes
 
